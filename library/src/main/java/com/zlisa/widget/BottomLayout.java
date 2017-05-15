@@ -3,16 +3,16 @@ package com.zlisa.widget;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
+import android.graphics.Color;
 import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.AppCompatImageView;
 import android.support.v7.widget.AppCompatTextView;
+import android.text.TextUtils;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -52,8 +52,11 @@ public class BottomLayout extends LinearLayout {
         setOrientation(HORIZONTAL);
         //设置布局居中排布
         setGravity(Gravity.CENTER);
+//        setPadding(0, DpUtil.dip2px(context, 6), 0, DpUtil.dip2px(context, 10));
         //设置布局最小高度
         setMinimumHeight(DpUtil.dip2px(getContext(), 56));
+
+        setBackgroundColor(getResources().getColor(R.color.colorAccent));
 
         mTabs = new ArrayList<>();
     }
@@ -64,7 +67,21 @@ public class BottomLayout extends LinearLayout {
      * @param tab
      */
     public void addTab(Tab tab) {
-        addTab(tab, mTabs.size());
+        if (tab != null) {
+            addTab(tab, mTabs.size());
+        } else {
+            addTab(new Tab(), false);
+        }
+    }
+
+    /**
+     * 添加Tab
+     *
+     * @param tab
+     * @param visible 是否可见
+     */
+    public void addTab(Tab tab, boolean visible) {
+        addTab(tab, mTabs.size(), visible, false);
     }
 
     /**
@@ -85,11 +102,32 @@ public class BottomLayout extends LinearLayout {
      * @param isSelected
      */
     public void addTab(Tab tab, int position, boolean isSelected) {
+        addTab(tab, position, true, isSelected);
+    }
+
+    /**
+     * 添加Tab
+     *
+     * @param tab
+     * @param position
+     * @param visible
+     * @param isSelected
+     */
+    public void addTab(Tab tab, int position, boolean visible, boolean isSelected) {
+        if (tab == null) {
+            tab = new Tab();
+        }
         tab.setPosition(position);
         tab.setSelected(isSelected);
         TabView tabView = createTabView(tab);
 
-        mTabs.add(tabView);
+        addView(tabView);
+
+        if (visible) {
+            mTabs.add(tabView);
+        } else {
+            tabView.setVisibility(View.INVISIBLE);
+        }
     }
 
     /**
@@ -107,7 +145,9 @@ public class BottomLayout extends LinearLayout {
         //选中当前选择项
         mTabs.get(currentPosition).setSelected();
 
-        mViewPager.setCurrentItem(currentPosition);
+        if (mViewPager != null) {
+            mViewPager.setCurrentItem(currentPosition);
+        }
     }
 
     /**
@@ -124,10 +164,14 @@ public class BottomLayout extends LinearLayout {
         viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
             @Override
             public void onPageSelected(int position) {
-                Log.i("BottomLayout", "onPageSelected : " + position);
                 setCurrentPosition(position);
             }
         });
+    }
+
+
+    public TabView getTabView(int position) {
+        return mTabs.get(position);
     }
 
     /**
@@ -137,19 +181,32 @@ public class BottomLayout extends LinearLayout {
      * @return
      */
     private TabView createTabView(Tab tab) {
-        TabView tabView = new TabView(this);
+        TabView tabView = new TabView(getContext());
         tabView.setTab(tab);
         return tabView;
+    }
+
+    public interface ITabView {
+
+        /**
+         * 设置当前Tab视图为选中状态
+         */
+        void setSelected();
+
+        /**
+         * 取消当前Tab视图选中状态
+         */
+        void setUnSelected();
     }
 
     /**
      * Tab视图
      */
-    private class TabView {
+    public class TabView extends LinearLayout implements ITabView {
         //动画播放时长
         private static final int DURATION = 120;
         //选中状态放大尺寸
-        private static final float MAX_SCALE = 1.1f;
+        private static final float MAX_SCALE = 1f;
         //点击缩小尺寸
         private static final float MIN_SCALE = 0.5f;
         //正常大小
@@ -160,45 +217,67 @@ public class BottomLayout extends LinearLayout {
         private static final float MAX_ALPHA = 1f;
         //绑定的Tab内容
         private Tab mTab;
-        //真实容器
-        private LinearLayout mTabContainer;
         //Tab图标
         private AppCompatImageView mTabImage;
         //Tab文字
         private AppCompatTextView mTabText;
+        //取消点击事件，防止长按拖动
+        private boolean isCancel = false;
 
-        TabView(ViewGroup containerLayout) {
-            mTabContainer = (LinearLayout) LayoutInflater.from(containerLayout.getContext())
-                    .inflate(R.layout.layout_bottom_tab, containerLayout, false);
-            mTabImage = (AppCompatImageView) mTabContainer.findViewById(R.id.tab_image);
-            mTabText = (AppCompatTextView) mTabContainer.findViewById(R.id.tab_text);
+        public TabView(Context context) {
+            super(context);
+            //Tab中内容垂直分布
+            setOrientation(VERTICAL);
+            //Tab中内容分布居中
+            setGravity(Gravity.CENTER);
             //设置真实容器的布局属性
-            LayoutParams lp = (LayoutParams) mTabContainer.getLayoutParams();
-            lp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-            lp.height = ViewGroup.LayoutParams.MATCH_PARENT;
+            LayoutParams lp = new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT);
             //在父容器中均匀分布的必要
             lp.weight = 1;
-            //Tab中内容分布居中
-            lp.gravity = Gravity.CENTER;
-            //添加Tab视图到BottomLayout中去
-            containerLayout.addView(mTabContainer);
+            setLayoutParams(lp);
+
+            mTabImage = new AppCompatImageView(context);
+            mTabImage.setLayoutParams(new ViewGroup.LayoutParams(DpUtil.dip2px(context, 24),
+                    DpUtil.dip2px(context, 24)));
+            mTabText = new AppCompatTextView(context);
+            mTabText.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT));
+
+            addView(mTabImage);
+            addView(mTabText);
+
             //Tab点击事件，用于更新选中和未选中状态
-            mTabContainer.setOnClickListener(new OnClickListener() {
+            this.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     onTabClick();
                 }
             });
+
             //Tab触摸事件监听，控制动画
-            mTabContainer.setOnTouchListener(new OnTouchListener() {
+            this.setOnTouchListener(new OnTouchListener() {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
+
                     switch (event.getAction()) {
                         case MotionEvent.ACTION_DOWN:
                             animSmall();
                             break;
+                        case MotionEvent.ACTION_MOVE:
+                            if (event.getY() < 0
+                                    || event.getY() > getHeight()
+                                    || event.getX() < 0
+                                    || event.getX() > getWidth()) {
+                                isCancel = true;
+                            }
+                            break;
                         case MotionEvent.ACTION_UP:
-                            animBig();
+                            if (isCancel) {
+                                animSmall2Initial();
+                            } else {
+                                animBig();
+                            }
                             break;
                     }
                     return false;
@@ -211,7 +290,7 @@ public class BottomLayout extends LinearLayout {
          *
          * @param tab
          */
-        void setTab(Tab tab) {
+        private void setTab(Tab tab) {
             mTab = tab;
             update();
         }
@@ -219,27 +298,40 @@ public class BottomLayout extends LinearLayout {
         /**
          * 更新Tab
          */
-        void update() {
-            mTabText.setText(mTab.getText());
-            mTabText.setTextColor(mTab.getTextColor());
-            mTabImage.setImageResource(mTab.getImgResId());
+        private void update() {
+            mTabText.setTextSize(12);
+            if (!TextUtils.isEmpty(mTab.getText())) {
+                mTabText.setText(mTab.getText());
+            }
+            if (mTab.getTextColor() != 0) {
+                mTabText.setTextColor(mTab.getTextColor());
+            }
+            if (mTab.getImgResId() != 0) {
+                mTabImage.setImageResource(mTab.getImgResId());
+            }
             mTab.setSelected(false);
         }
 
-        /**
-         * 设置当前Tab视图为选中状态
-         */
-        void setSelected() {
-            mTabText.setText(mTab.getText());
-            mTabText.setTextColor(mTab.getFocusTextColor());
-            mTabImage.setImageResource(mTab.getFocusImgResId());
+        @Override
+        public void setSelected() {
+            setPadding(0, DpUtil.dip2px(getContext(), 8), 0, DpUtil.dip2px(getContext(), 10));
+            mTabText.setTextSize(14);
+
+            if (!TextUtils.isEmpty(mTab.getText())) {
+                mTabText.setText(mTab.getText());
+            }
+            if (mTab.getFocusTextColor() != 0) {
+                mTabText.setTextColor(mTab.getFocusTextColor());
+            }
+            if (mTab.getFocusImgResId() != 0) {
+                mTabImage.setImageResource(mTab.getFocusImgResId());
+            }
             mTab.setSelected(true);
         }
 
-        /**
-         * 取消当前Tab视图选中状态
-         */
-        void setUnSelected() {
+        @Override
+        public void setUnSelected() {
+            setPadding(0, DpUtil.dip2px(getContext(), 6), 0, DpUtil.dip2px(getContext(), 10));
             update();
 
             animInitial();
@@ -259,9 +351,9 @@ public class BottomLayout extends LinearLayout {
          * 按下缩小动画
          */
         private void animSmall() {
-            ObjectAnimator alpha = ObjectAnimator.ofFloat(mTabContainer, View.ALPHA, MAX_ALPHA, MIN_ALPHA);
-            ObjectAnimator scaleX = ObjectAnimator.ofFloat(mTabContainer, View.SCALE_X, NORMAL_SCALE, MIN_SCALE);
-            ObjectAnimator scaleY = ObjectAnimator.ofFloat(mTabContainer, View.SCALE_Y, NORMAL_SCALE, MIN_SCALE);
+            ObjectAnimator alpha = ObjectAnimator.ofFloat(this, View.ALPHA, MAX_ALPHA, MIN_ALPHA);
+            ObjectAnimator scaleX = ObjectAnimator.ofFloat(this, View.SCALE_X, NORMAL_SCALE, MIN_SCALE);
+            ObjectAnimator scaleY = ObjectAnimator.ofFloat(this, View.SCALE_Y, NORMAL_SCALE, MIN_SCALE);
             AnimatorSet set = new AnimatorSet();
             set.setDuration(DURATION);
             set.setInterpolator(new DecelerateInterpolator(2));
@@ -273,9 +365,9 @@ public class BottomLayout extends LinearLayout {
          * 抬起放大动画
          */
         private void animBig() {
-            ObjectAnimator alpha = ObjectAnimator.ofFloat(mTabContainer, View.ALPHA, MIN_ALPHA, MAX_ALPHA);
-            ObjectAnimator scaleX = ObjectAnimator.ofFloat(mTabContainer, View.SCALE_X, MIN_SCALE, MAX_SCALE);
-            ObjectAnimator scaleY = ObjectAnimator.ofFloat(mTabContainer, View.SCALE_Y, MIN_SCALE, MAX_SCALE);
+            ObjectAnimator alpha = ObjectAnimator.ofFloat(this, View.ALPHA, MIN_ALPHA, MAX_ALPHA);
+            ObjectAnimator scaleX = ObjectAnimator.ofFloat(this, View.SCALE_X, MIN_SCALE, MAX_SCALE);
+            ObjectAnimator scaleY = ObjectAnimator.ofFloat(this, View.SCALE_Y, MIN_SCALE, MAX_SCALE);
             AnimatorSet set = new AnimatorSet();
             set.setDuration(DURATION);
             set.setInterpolator(new DecelerateInterpolator(2));
@@ -287,12 +379,26 @@ public class BottomLayout extends LinearLayout {
          * 取消选中，恢复正常动画
          */
         private void animInitial() {
-            ObjectAnimator scaleX = ObjectAnimator.ofFloat(mTabContainer, View.SCALE_X, MAX_SCALE, NORMAL_SCALE);
-            ObjectAnimator scaleY = ObjectAnimator.ofFloat(mTabContainer, View.SCALE_Y, MAX_SCALE, NORMAL_SCALE);
+            ObjectAnimator scaleX = ObjectAnimator.ofFloat(this, View.SCALE_X, MAX_SCALE, NORMAL_SCALE);
+            ObjectAnimator scaleY = ObjectAnimator.ofFloat(this, View.SCALE_Y, MAX_SCALE, NORMAL_SCALE);
             AnimatorSet set = new AnimatorSet();
             set.setDuration(DURATION);
             set.setInterpolator(new DecelerateInterpolator(2));
             set.play(scaleX).with(scaleY);
+            set.start();
+        }
+
+        /**
+         * 取消选中，恢复正常动画
+         */
+        private void animSmall2Initial() {
+            ObjectAnimator alpha = ObjectAnimator.ofFloat(this, View.ALPHA, MIN_ALPHA, MAX_ALPHA);
+            ObjectAnimator scaleX = ObjectAnimator.ofFloat(this, View.SCALE_X, MIN_SCALE, NORMAL_SCALE);
+            ObjectAnimator scaleY = ObjectAnimator.ofFloat(this, View.SCALE_Y, MIN_SCALE, NORMAL_SCALE);
+            AnimatorSet set = new AnimatorSet();
+            set.setDuration(DURATION);
+            set.setInterpolator(new DecelerateInterpolator(2));
+            set.play(scaleX).with(scaleY).with(alpha);
             set.start();
         }
     }
@@ -307,11 +413,30 @@ public class BottomLayout extends LinearLayout {
         private int imgResId;
         private int focusImgResId;
 
-        private int textColor;
-        private int focusTextColor;
+        private int textColor = Color.LTGRAY;
+        private int focusTextColor = Color.WHITE;
+
+        private int textSize;
+        private int focusTextSize;
 
         private boolean isSelected = false;
         private int position = 0;
+
+        public Tab() {
+        }
+
+        public Tab(String text, @DrawableRes int imgResId) {
+            this.text = text;
+            this.imgResId = imgResId;
+
+            this.focusImgResId = imgResId;
+        }
+
+        public Tab(String text, int imgResId, int focusImgResId) {
+            this.text = text;
+            this.imgResId = imgResId;
+            this.focusImgResId = focusImgResId;
+        }
 
         public Tab(String text,
                    @DrawableRes int imgResId,
@@ -360,6 +485,7 @@ public class BottomLayout extends LinearLayout {
         public boolean isSelected() {
             return isSelected;
         }
+
     }
 
     public interface OnTabSelectListener {
