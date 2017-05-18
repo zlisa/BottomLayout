@@ -40,10 +40,10 @@ public class MainActivity extends AppCompatActivity {
         mViewPager.setAdapter(mPagerAdapter);
         mBottomLayout.setUpWithViewPager(mViewPager);
 
-        mPagerAdapter.addFragment(TestFragment.newInstance());
-        mPagerAdapter.addFragment(TestFragment.newInstance());
-        mPagerAdapter.addFragment(TestFragment.newInstance());
-        mPagerAdapter.addFragment(TestFragment.newInstance());
+//        mPagerAdapter.addFragment(TestFragment.newInstance());
+//        mPagerAdapter.addFragment(TestFragment.newInstance());
+//        mPagerAdapter.addFragment(TestFragment.newInstance());
+//        mPagerAdapter.addFragment(TestFragment.newInstance());
 
         mBottomLayout.setOnTabSelectListener(new BottomLayout.OnTabSelectListener() {
             @Override

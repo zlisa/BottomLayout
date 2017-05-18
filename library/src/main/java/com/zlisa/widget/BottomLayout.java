@@ -3,8 +3,6 @@ package com.zlisa.widget;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
-import android.graphics.Color;
-import android.support.annotation.ColorInt;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
@@ -20,7 +18,7 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.LinearLayout;
 
 import com.zlisa.R;
-import com.zlisa.util.DpUtil;
+import com.zlisa.util.DensityUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,9 +50,9 @@ public class BottomLayout extends LinearLayout {
         setOrientation(HORIZONTAL);
         //设置布局居中排布
         setGravity(Gravity.CENTER);
-//        setPadding(0, DpUtil.dip2px(context, 6), 0, DpUtil.dip2px(context, 10));
+//        setPadding(0, DensityUtils.dp2px(context, 6), 0, DensityUtils.dp2px(context, 10));
         //设置布局最小高度
-        setMinimumHeight(DpUtil.dip2px(getContext(), 56));
+        setMinimumHeight(DensityUtils.dp2px(getContext(), 56));
 
         setBackgroundColor(getResources().getColor(R.color.colorAccent));
 
@@ -159,6 +157,11 @@ public class BottomLayout extends LinearLayout {
         this.onTabSelectListener = onTabSelectListener;
     }
 
+    public void setUp() {
+        setCurrentPosition(0);
+        mTabs.get(0).onTabClick();
+    }
+
     public void setUpWithViewPager(ViewPager viewPager) {
         mViewPager = viewPager;
         viewPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
@@ -238,8 +241,8 @@ public class BottomLayout extends LinearLayout {
             setLayoutParams(lp);
 
             mTabImage = new AppCompatImageView(context);
-            mTabImage.setLayoutParams(new ViewGroup.LayoutParams(DpUtil.dip2px(context, 24),
-                    DpUtil.dip2px(context, 24)));
+            mTabImage.setLayoutParams(new ViewGroup.LayoutParams(DensityUtils.dp2px(context, 24),
+                    DensityUtils.dp2px(context, 24)));
             mTabText = new AppCompatTextView(context);
             mTabText.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -304,7 +307,7 @@ public class BottomLayout extends LinearLayout {
                 mTabText.setText(mTab.getText());
             }
             if (mTab.getTextColor() != 0) {
-                mTabText.setTextColor(mTab.getTextColor());
+                mTabText.setTextColor(getContext().getResources().getColor(mTab.getTextColor()));
             }
             if (mTab.getImgResId() != 0) {
                 mTabImage.setImageResource(mTab.getImgResId());
@@ -314,14 +317,14 @@ public class BottomLayout extends LinearLayout {
 
         @Override
         public void setSelected() {
-            setPadding(0, DpUtil.dip2px(getContext(), 8), 0, DpUtil.dip2px(getContext(), 10));
+            setPadding(0, DensityUtils.dp2px(getContext(), 8), 0, DensityUtils.dp2px(getContext(), 10));
             mTabText.setTextSize(14);
 
             if (!TextUtils.isEmpty(mTab.getText())) {
                 mTabText.setText(mTab.getText());
             }
             if (mTab.getFocusTextColor() != 0) {
-                mTabText.setTextColor(mTab.getFocusTextColor());
+                mTabText.setTextColor(getContext().getResources().getColor(mTab.getFocusTextColor()));
             }
             if (mTab.getFocusImgResId() != 0) {
                 mTabImage.setImageResource(mTab.getFocusImgResId());
@@ -331,7 +334,7 @@ public class BottomLayout extends LinearLayout {
 
         @Override
         public void setUnSelected() {
-            setPadding(0, DpUtil.dip2px(getContext(), 6), 0, DpUtil.dip2px(getContext(), 10));
+            setPadding(0, DensityUtils.dp2px(getContext(), 6), 0, DensityUtils.dp2px(getContext(), 10));
             update();
 
             animInitial();
@@ -413,8 +416,8 @@ public class BottomLayout extends LinearLayout {
         private int imgResId;
         private int focusImgResId;
 
-        private int textColor = Color.LTGRAY;
-        private int focusTextColor = Color.WHITE;
+        private int textColor;
+        private int focusTextColor;
 
         private int textSize;
         private int focusTextSize;
@@ -441,8 +444,8 @@ public class BottomLayout extends LinearLayout {
         public Tab(String text,
                    @DrawableRes int imgResId,
                    @DrawableRes int focusImgResId,
-                   @ColorInt int textColor,
-                   @ColorInt int focusTextColor) {
+                   int textColor,
+                   int focusTextColor) {
             this.text = text;
             this.imgResId = imgResId;
             this.focusImgResId = focusImgResId;
