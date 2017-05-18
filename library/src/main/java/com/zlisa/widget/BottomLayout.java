@@ -302,7 +302,7 @@ public class BottomLayout extends LinearLayout {
          * 更新Tab
          */
         private void update() {
-            mTabText.setTextSize(12);
+            mTabText.setTextSize(mTab.getTextSize());
             if (!TextUtils.isEmpty(mTab.getText())) {
                 mTabText.setText(mTab.getText());
             }
@@ -318,7 +318,7 @@ public class BottomLayout extends LinearLayout {
         @Override
         public void setSelected() {
             setPadding(0, DensityUtils.dp2px(getContext(), 8), 0, DensityUtils.dp2px(getContext(), 10));
-            mTabText.setTextSize(14);
+            mTabText.setTextSize(mTab.getFocusTextSize());
 
             if (!TextUtils.isEmpty(mTab.getText())) {
                 mTabText.setText(mTab.getText());
@@ -419,8 +419,8 @@ public class BottomLayout extends LinearLayout {
         private int textColor;
         private int focusTextColor;
 
-        private int textSize;
-        private int focusTextSize;
+        private int textSize = 12;
+        private int focusTextSize = 14;
 
         private boolean isSelected = false;
         private int position = 0;
@@ -483,6 +483,22 @@ public class BottomLayout extends LinearLayout {
 
         public void setSelected(boolean selected) {
             isSelected = selected;
+        }
+
+        public int getTextSize() {
+            return textSize;
+        }
+
+        public void setTextSize(int textSize) {
+            this.textSize = textSize;
+        }
+
+        public int getFocusTextSize() {
+            return focusTextSize;
+        }
+
+        public void setFocusTextSize(int focusTextSize) {
+            this.focusTextSize = focusTextSize;
         }
 
         public boolean isSelected() {
